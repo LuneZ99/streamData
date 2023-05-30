@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  stream-data:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    volumes:
+      - /mnt/hdd-2:/data
