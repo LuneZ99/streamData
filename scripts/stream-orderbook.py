@@ -21,29 +21,27 @@ from cryptofeed.defines import (
 )
 from cryptofeed.exchanges import BinanceFutures
 
-parser = argparse.ArgumentParser(description='Stream orderbook data from Quest')
-parser.add_argument('--config', type=str, default='stream-orderbook-config.yaml',
-                    help='Path to the YAML configuration file')
-
-args = parser.parse_args()
-
-# 从 YAML 文件加载配置
-with open(args.config, 'r') as config_file:
-    config = yaml.safe_load(config_file)
-
-# 解析配置
-dry_run = config.get('dry_run', True)
-output_dir = config.get('output_dir', "/mnt/hdd-2/stream_orderbook/collected/")
-timeit = config.get('timeit', True)
-
-# parser = argparse.ArgumentParser(
-#     description='Stream orderbook data from Quest')
-# parser.add_argument('--dry-run', action='store_true',
-#                     help='Print the stream to stdout')
-# parser.add_argument('--output-dir', type=str, default=None)
-# parser.add_argument('--timeit', action='store_true')
+# parser = argparse.ArgumentParser(description='Stream orderbook data from Quest')
+# parser.add_argument('--config', type=str, default='stream-orderbook-config.yaml',
+#                     help='Path to the YAML configuration file')
 #
 # args = parser.parse_args()
+#
+# with open(args.config, 'r') as config_file:
+#     config = yaml.safe_load(config_file)
+#
+# dry_run = config.get('dry_run', True)
+# output_dir = config.get('output_dir', "/mnt/hdd-2/stream_orderbook/collected/")
+# timeit = config.get('timeit', True)
+
+parser = argparse.ArgumentParser(
+    description='Stream orderbook data from Quest')
+parser.add_argument('--dry-run', action='store_true',
+                    help='Print the stream to stdout')
+parser.add_argument('--output-dir', type=str, default=None)
+parser.add_argument('--timeit', action='store_true')
+
+args = parser.parse_args()
 
 FILE_HANDLE = {}  # Symbol -> (Filepath, Filehandle)
 PREV_SECTION_ID = None
@@ -98,7 +96,7 @@ def update_file_handle(symbol, book_timestamp):
     global FILE_HANDLE
 
     # Build directory to save
-    save_dir = Path(os.path.join(output_dir, symbol))
+    save_dir = Path(os.path.join(args.output_dir, symbol))
     save_dir.mkdir(exist_ok=True, parents=True)
 
     # Calculate filepath for today
@@ -122,7 +120,7 @@ def update_file_handle(symbol, book_timestamp):
         }
 
 
-@conditional_decorator(async_timeit, timeit)
+@conditional_decorator(async_timeit, args.timeit)
 async def save_book(book, receipt_timestamp):
     book_dict = book.to_dict(numeric_type=str)
     symbol = book_dict["symbol"]
@@ -157,7 +155,7 @@ async def save_book(book, receipt_timestamp):
                 ticks_for_cur_book.append(TICKS_QUEUE[symbol].popleft()[_DATA_IDX])
         book_dict["ticks"] = ticks_for_cur_book
 
-    if not dry_run:
+    if not args.dry_run:
         update_file_handle(symbol, book_ts)
         # Write to file
         # async with aiofiles.open(FILE_HANDLE[symbol]["handle"], closefd=False) as f:
@@ -182,7 +180,7 @@ async def save_book(book, receipt_timestamp):
     )
 
 
-@conditional_decorator(async_timeit, timeit)
+@conditional_decorator(async_timeit, args.timeit)
 async def process_trades(trades, receipt_timestamp):
     # https://github.com/bmoscon/cryptofeed/blob/e54ea1ac8995fc031455962da9926abd1a083af7/cryptofeed/exchanges/binance.py#L171
     raw_resp: dict = trades.raw
@@ -191,7 +189,7 @@ async def process_trades(trades, receipt_timestamp):
         TRADES_QUEUE[symbol].append((trades.timestamp, raw_resp))
 
 
-@conditional_decorator(async_timeit, timeit)
+@conditional_decorator(async_timeit, args.timeit)
 async def process_liquidations(liquidations, receipt_timestamp):
     # https://github.com/bmoscon/cryptofeed/blob/e54ea1ac8995fc031455962da9926abd1a083af7/cryptofeed/exchanges/binance.py#L221
     raw_resp: dict = liquidations.raw
@@ -216,7 +214,7 @@ async def process_liquidations(liquidations, receipt_timestamp):
 #         ORDERS_QUEUE[symbol].append((orders.timestamp, raw_resp))
 
 
-@conditional_decorator(async_timeit, timeit)
+@conditional_decorator(async_timeit, args.timeit)
 async def process_ticks(ticks, receipt_timestamp):
     raw_resp: dict = ticks.raw
     symbol = ticks.symbol
@@ -227,7 +225,7 @@ async def process_ticks(ticks, receipt_timestamp):
 def main():
     pprint(vars(args))
 
-    if not dry_run and output_dir is None:
+    if not args.dry_run and args.output_dir is None:
         print("Must specify output directory!")
         return
 

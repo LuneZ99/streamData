@@ -1,3 +1,2 @@
 ujson~=5.7.0
-PyYAML~=6.0
 cryptofeed[all]~=2.3.1
