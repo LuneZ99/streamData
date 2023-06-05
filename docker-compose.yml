@@ -8,4 +8,4 @@ services:
     network_mode: host
     volumes:
       - /mnt/hdd-2:/data
-    command: proxychains4 python scripts/stream-orderbook.py --output-dir /data/stream_orderbook/collected/
+    command: proxychains4 python scripts/stream-orderbook.py --output-dir /data/stream_orderbook/collected/ --symbol ETH-USDT-PERP

@@ -9,30 +9,14 @@ from pathlib import Path
 from pprint import pprint
 
 import ujson as json
-import yaml
 from cryptofeed import FeedHandler
 from cryptofeed.defines import (
     L2_BOOK,
     TRADES,
     LIQUIDATIONS,
     TICKER,
-    # ORDER_INFO,
-    # FUNDING
 )
 from cryptofeed.exchanges import BinanceFutures
-
-# parser = argparse.ArgumentParser(description='Stream orderbook data from Quest')
-# parser.add_argument('--config', type=str, default='stream-orderbook-config.yaml',
-#                     help='Path to the YAML configuration file')
-#
-# args = parser.parse_args()
-#
-# with open(args.config, 'r') as config_file:
-#     config = yaml.safe_load(config_file)
-#
-# dry_run = config.get('dry_run', True)
-# output_dir = config.get('output_dir', "/mnt/hdd-2/stream_orderbook/collected/")
-# timeit = config.get('timeit', True)
 
 parser = argparse.ArgumentParser(
     description='Stream orderbook data from Quest')
@@ -40,6 +24,11 @@ parser.add_argument('--dry-run', action='store_true',
                     help='Print the stream to stdout')
 parser.add_argument('--output-dir', type=str, default=None)
 parser.add_argument('--timeit', action='store_true')
+parser.add_argument(
+    '--symbol', type=str,
+    choices=["ETH-USDT-PERP", "BTC-USDT-PERP", "ETH-BUSD-PERP", "BTC-BUSD-PERP", "ETC-BTC-PERP"],
+    default=None
+)
 
 args = parser.parse_args()
 
@@ -230,28 +219,10 @@ def main():
         return
 
     f = FeedHandler()
-    # f.add_feed(BinanceFutures(
-    #     symbols=[
-    #         "BTC-USDT-PERP",
-    #     ],
-    #     channels=[
-    #         TRADES,
-    #         LIQUIDATIONS,
-    #         L2_BOOK,
-    #         TICKER
-    #     ],
-    #     callbacks={
-    #         TRADES: process_trades,
-    #         LIQUIDATIONS: process_liquidations,
-    #         L2_BOOK: save_book,
-    #     },
-    #     retries=-1,
-    #     max_depth=100
-    # ))
 
     f.add_feed(BinanceFutures(
         symbols=[
-            "ETH-USDT-PERP"
+            args.symbol
         ],
         channels=[
             TRADES,
