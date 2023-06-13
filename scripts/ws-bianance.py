@@ -36,7 +36,7 @@ class StreamCsvHandler:
         utc_date = str(utc_now)[:10]
         self.date = utc_date
 
-        self.reset_handle()
+        self._reset_handle()
 
     def on_close(self):
         if self.handle:
@@ -48,16 +48,21 @@ class StreamCsvHandler:
         utc_date = str(utc_now)[:10]
         if self.date > utc_date:
             self.date = utc_date
-            self.reset_handle()
+            self._reset_handle()
         line = self._process_line(info)
-        self.handle.write("\n" + line)
+        if len(line) > 0:
+            self.handle.write("\n" + ",".join(map(str, line)))
 
-    def reset_handle(self):
+    def _reset_handle(self):
 
         if self.handle:
             self.handle.close()
 
         self.file_name = f"{self.parent_path}/{self.symbol}/{self.date}/{self.stream}.csv"
+
+        if not os.path.exists(f"{self.parent_path}/{self.symbol}/{self.date}"):
+            os.makedirs(f"{self.parent_path}/{self.symbol}/{self.date}")
+
         if os.path.exists(self.file_name):
             self.handle = open(self.file_name, "a")
         else:
@@ -82,8 +87,6 @@ class StreamCsvHandler:
 #         header = ""
 #         self.handle.write()
 
-
-
 class AggTradeHandler(StreamCsvHandler):
 
     def __init__(self, path, symbol, stream="aggTrade"):
@@ -91,7 +94,7 @@ class AggTradeHandler(StreamCsvHandler):
         self.headers = "OrigTime,ID,Price,Volume,TradeFirst,TradeLast,TradeTime,isSell"
 
     def _process_line(self, info):
-        return ",".join([
+        return [
             info['E'],
             info['a'],
             info['p'],
@@ -100,6 +103,97 @@ class AggTradeHandler(StreamCsvHandler):
             info['l'],
             info['T'],
             info['m']
-        ])
+        ]
 
 
+class KlineHandler(StreamCsvHandler):
+
+    def __init__(self, path, symbol, stream):
+        assert "kline" in stream, "This handler is only supported for kline streams"
+        super().__init__(path, symbol, stream)
+        self.headers = "OrigTime,TimeStart,TimeEnd,TradeFirst,TradeLast,Open,Close,High,Low,Volume,TradeCount,Money,BuyVolume,BuyMoney"
+
+    def _process_line(self, info):
+
+        if info['k']['x']:
+            return [
+                info['E'],
+                info['k']['t'],
+                info['k']['T'],
+                info['k']['f'],
+                info['k']['L'],
+                info['k']['o'],
+                info['k']['c'],
+                info['k']['h'],
+                info['k']['l'],
+                info['k']['v'],
+                info['k']['n'],
+                info['k']['q'],
+                info['k']['V'],
+                info['k']['Q']
+            ]
+
+        else:
+            return []
+
+
+class BookTickerHandler(StreamCsvHandler):
+
+    def __init__(self, path, symbol, stream="bookTicker"):
+        super().__init__(path, symbol, stream)
+        self.headers = "OrigTime,ID,TradeTime,BP1,BV1,SP1,SV1"
+
+    def _process_line(self, info):
+        return [
+            info['E'],
+            info['u'],
+            info['T'],
+            info['b'],
+            info['B'],
+            info['a'],
+            info['A']
+        ]
+
+
+class ForceOrderHandler(StreamCsvHandler):
+
+    def __init__(self, path, symbol, stream="forceOrder"):
+        super().__init__(path, symbol, stream)
+        self.headers = "OrigTime,OrderSide,OrderType,TimeInForce,Price,Volume,AvgPrice,OrderStatus,LastTradedVolume,TotalTradedVolume,TradeTime"
+
+    def _process_line(self, info):
+        return [
+            info['E'],
+            info['o']['S'],
+            info['o']['o'],
+            info['o']['f'],
+            info['o']['p'],
+            info['o']['q'],
+            info['o']['ap'],
+            info['o']['X'],
+            info['o']['l'],
+            info['o']['z'],
+            info['o']['T']
+        ]
+
+
+class ForceOrderHandler(StreamCsvHandler):
+
+    def __init__(self, path, symbol, stream="forceOrder"):
+        super().__init__(path, symbol, stream)
+        self.headers = "OrigTime,OrderSide,OrderType,TimeInForce,Price,Volume,AvgPrice,OrderStatus,LastTradedVolume,TotalTradedVolume,TradeTime"
+
+    def _process_line(self, info):
+        return [
+            info['E'],
+            info['o']['S'],
+            info['o']['o'],
+            info['o']['f'],
+            info['o']['p'],
+            info['o']['q'],
+            info['o']['ap'],
+            info['o']['X'],
+            info['o']['l'],
+            info['o']['z'],
+            info['o']['T']
+        ]
