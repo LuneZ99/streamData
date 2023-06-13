@@ -76,8 +76,6 @@ class StreamCsvHandler:
         raise NotImplementedError
 
 
-
-
 # class SnapCsvHandler(StreamCsvHandler):
 #
 #     def __init__(self, path, date, symbol, stream="snap"):
@@ -86,6 +84,7 @@ class StreamCsvHandler:
 #     def write_csv_header(self):
 #         header = ""
 #         self.handle.write()
+
 
 class AggTradeHandler(StreamCsvHandler):
 
@@ -177,23 +176,12 @@ class ForceOrderHandler(StreamCsvHandler):
         ]
 
 
-class ForceOrderHandler(StreamCsvHandler):
+class DepthHandler(StreamCsvHandler):
 
-    def __init__(self, path, symbol, stream="forceOrder"):
+    def __init__(self, path, symbol, stream="depth"):
         super().__init__(path, symbol, stream)
-        self.headers = "OrigTime,OrderSide,OrderType,TimeInForce,Price,Volume,AvgPrice,OrderStatus,LastTradedVolume,TotalTradedVolume,TradeTime"
+        self.headers = "OrigTime,TradeTime," + ",".join(f"BP{i},BV{i}" for i in range(20)) + ",".join(f"SP{i},SV{i}" for i in range(20))
 
     def _process_line(self, info):
-        return [
-            info['E'],
-            info['o']['S'],
-            info['o']['o'],
-            info['o']['f'],
-            info['o']['p'],
-            info['o']['q'],
-            info['o']['ap'],
-            info['o']['X'],
-            info['o']['l'],
-            info['o']['z'],
-            info['o']['T']
-        ]
+        return [info['E'], info['T']] + [f"{x[0]},{x[1]}" for x in info['b']] + [f"{x[0]},{x[1]}" for x in info['a']]
+
