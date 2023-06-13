@@ -178,10 +178,11 @@ class ForceOrderHandler(StreamCsvHandler):
 
 class DepthHandler(StreamCsvHandler):
 
+    # depth20@100ms
+
     def __init__(self, path, symbol, stream="depth"):
+        self.headers = "OrigTime,TradeTime," + ",".join([f"BP{i},BV{i}" for i in range(1, 21)] + [f"SP{i},SV{i}" for i in range(1, 21)])
         super().__init__(path, symbol, stream)
-        self.headers = "OrigTime,TradeTime," + ",".join(f"BP{i},BV{i}" for i in range(20)) + ",".join(f"SP{i},SV{i}" for i in range(20))
 
     def _process_line(self, info):
         return [info['E'], info['T']] + [f"{x[0]},{x[1]}" for x in info['b']] + [f"{x[0]},{x[1]}" for x in info['a']]
-
